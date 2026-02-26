@@ -1,65 +1,181 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from "react";
+import { createPublicClient, createWalletClient, http, formatEther, getContract, custom } from "viem";
+import { foundry } from "viem/chains";
+
+import Counter_ABI from "../contracts/Counter.json";
+
+//Counter 合约地址
+const COUNTER_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export default function Home() {
+  const [balance, setBalance] = useState<string>('0');
+  const [counterNumber, setCounterNumber] = useState<string>('0');
+  const [address, setAddress] = useState<`0x${string}` | undefined>();
+  const [isConnected, setIsConnected] = useState(false);
+  const [chainId, setChainId] = useState<number | undefined>();
+
+  // 公共客户端
+  const publicClient = createPublicClient({
+    chain: foundry,
+    transport: http()
+  });
+
+  // 连接钱包
+  const connectWallet = async () => {
+    if (typeof window.ethereum === 'undefined') {
+      alert('请按照Metamask');
+      return;
+    }
+
+    try {
+      const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+
+      setAddress(address);
+      setChainId(chainId);
+      setIsConnected(true);
+
+      // 监听账户变化
+      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+        if (accounts.length === 0) {
+          setIsConnected(false);
+          setAddress(undefined);
+        } else {
+          setAddress(accounts[0] as `0x${string}`);
+        }
+      });
+
+      // 监听网络变化
+      window.ethereum.on('chainChanged', (chainId: string) => {
+        setChainId(Number(chainId));
+      });
+
+    } catch (error) {
+      console.error('连接钱包失败: ', error);
+    }
+  }
+
+  // 断开链接
+  const disconnectWallet = () => {
+    setIsConnected(false);
+    setAddress(undefined);
+    setChainId(undefined);
+  };
+
+  // 获取Counter合约数值
+  const fetchCounterNumber = async () => {
+    if (!address) return;
+
+    const counterContract = getContract({
+      address: COUNTER_ADDRESS,
+      abi: Counter_ABI,
+      client: publicClient
+    });
+
+    const number: any = await counterContract.read.number();
+    setCounterNumber(number.toString());
+  };
+
+  // 调用increment 函数
+  const handleIncrement = async () => {
+    if (!address) return;
+
+    const walletClient = createWalletClient({
+      chain: foundry,
+      transport: custom(window.ethereum)
+    });
+
+    try {
+      const hash = await walletClient.writeContract({
+        address: COUNTER_ADDRESS,
+        abi: Counter_ABI,
+        functionName: 'increment',
+        account: address
+      });
+      console.log('Transaction hash: ', hash);
+      // 更新数值显示
+      fetchCounterNumber();
+    } catch (error) {
+      console.error('调用 increment 失败:', error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (!address) return;
+
+      const balance = await publicClient.getBalance({
+        address: address,
+      });
+
+      setBalance(formatEther(balance));
+    };
+
+    if (address) {
+      fetchBalance();
+      fetchCounterNumber();
+    }
+  }, [address]);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
+    <div className="min-h-screen flex flex-col items-center justify-center p-8">
+      <h1 className="text-3xl font-bold mb-8">Simple Viem Demo</h1>
+
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-2xl">
+        <div className="mb-4">
           <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/siwe"
+            className="block w-full bg-purple-500 text-white py-2 px-4 rounded hover:bg-purple-600 transition-colors text-center"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
+            前往 SIWE 登录演示
           </a>
         </div>
-      </main>
+
+        {!isConnected ? (
+          <button
+            onClick={connectWallet}
+            className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors"
+          >
+            连接 MetaMask
+          </button>
+        ) : (
+          <div className="space-y-4">
+            <div className="text-center">
+              <p className="text-gray-600">钱包地址:</p>
+              <p className="font-mono break-all">{address}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-600">当前网络:</p>
+              <p className="font-mono">
+                {foundry.name} (Chain ID: {chainId})
+              </p>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-600">余额:</p>
+              <p className="font-mono">{balance} ETH</p>
+            </div>
+            <div className="text-center">
+              <p className="text-gray-600">Counter 数值:</p>
+              <p className="font-mono">{counterNumber}</p>
+              <button
+                onClick={handleIncrement}
+                className="mt-2 w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 transition-colors"
+              >
+                增加计数
+              </button>
+            </div>
+            <button
+              onClick={disconnectWallet}
+              className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
+            >
+              断开连接
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
+
 }

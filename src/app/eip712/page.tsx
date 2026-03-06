@@ -1,7 +1,6 @@
+"use client";
 
-'use client';
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   createWalletClient,
   createPublicClient,
@@ -11,34 +10,37 @@ import {
   type Address,
   custom,
   type WalletClient,
-  hashTypedData
-} from 'viem';
-import { foundry } from 'viem/chains';
-import { EIP712VerifierABI } from '@/types/EIP712Verifier';
+  hashTypedData,
+} from "viem";
+import { foundry } from "viem/chains";
+import { EIP712VerifierABI } from "@/types/EIP712Verifier";
 
-const CONTRACT_ADDRESS = '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9' as Address;
+const CONTRACT_ADDRESS =
+  "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9" as Address;
 
 export default function EIP712Demo() {
-  const [toAddress, setToAddress] = useState('');
-  const [amount, setAmount] = useState('');
-  const [signature, setSignature] = useState('');
-  const [verificationResult, setVerificationResult] = useState<boolean | null>(null);
+  const [toAddress, setToAddress] = useState("");
+  const [amount, setAmount] = useState("");
+  const [signature, setSignature] = useState("");
+  const [verificationResult, setVerificationResult] = useState<boolean | null>(
+    null,
+  );
   const [account, setAccount] = useState<Address | null>(null);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const [walletClient, setWalletClient] = useState<WalletClient | null>(null);
 
   // 创建公共客户端
   const publicClient = createPublicClient({
     chain: foundry,
-    transport: http()
+    transport: http(),
   });
 
   // 在客户端初始化钱包客户端
   useEffect(() => {
-    if (typeof window !== 'undefined' && window.ethereum) {
+    if (typeof window !== "undefined" && window.ethereum) {
       const client = createWalletClient({
         chain: foundry,
-        transport: custom(window.ethereum)
+        transport: custom(window.ethereum),
       });
       setWalletClient(client);
     }
@@ -46,54 +48,54 @@ export default function EIP712Demo() {
 
   // 连接钱包
   const connectWallet = async () => {
-
     if (!walletClient) {
-      setError('钱包客户端未初始化，请确保已安装 MetaMask');
+      setError("钱包客户端未初始化，请确保已安装 MetaMask");
       return;
     }
 
     try {
-      setError('');
+      setError("");
       // 请求用户授权连接钱包
       const [address] = await walletClient.requestAddresses();
       console.log(address);
 
       setAccount(address);
-      const chainId = await walletClient.getChainId();
+      const chainId: number = await walletClient.getChainId();
       if (chainId !== foundry.id) {
         await walletClient.switchChain({ id: foundry.id });
       }
     } catch (error) {
-      console.error('连接钱包错误:', error);
-      setError('连接钱包失败，请确保已安装 MetaMask 并解锁');
+      console.error("连接钱包错误:", error);
+      setError("连接钱包失败，请确保已安装 MetaMask 并解锁");
     }
   };
 
   const handleSign = async () => {
     if (!walletClient || !account) {
-      setError('请先连接钱包');
+      setError("请先连接钱包");
       return;
     }
 
     if (!toAddress || !amount) {
-      setError('请填写接收地址和金额');
+      setError("请填写接收地址和金额");
       return;
     }
 
     try {
-      setError('');
+      setError("");
       const domain = {
-        name: 'EIP712Verifier',
-        version: '1.0.0',
-        chainId: foundry.id,
+        name: "EIP712Verifier",
+        version: "1.0.0",
+        chainId: BigInt(foundry.id),
         verifyingContract: CONTRACT_ADDRESS,
       };
 
       // 合约中的 SEND_TYPEHASH 与前端定义的 types 结构一致
       const types = {
-        Send: [  //  primaryType, 签名时, 消息的标题会显示 primaryType 的名称
-          { name: 'to', type: 'address' },
-          { name: 'value', type: 'uint256' },
+        Send: [
+          //  primaryType, 签名时, 消息的标题会显示 primaryType 的名称
+          { name: "to", type: "address" },
+          { name: "value", type: "uint256" },
         ],
       };
 
@@ -107,14 +109,14 @@ export default function EIP712Demo() {
         account,
         domain,
         types,
-        primaryType: 'Send',
+        primaryType: "Send",
         message: msg,
       });
 
       setSignature(signature);
     } catch (error) {
-      console.error('签名错误:', error);
-      setError(error instanceof Error ? error.message : '签名失败');
+      console.error("签名错误:", error);
+      setError(error instanceof Error ? error.message : "签名失败");
     }
   };
 
@@ -122,50 +124,46 @@ export default function EIP712Demo() {
     const hash = await publicClient.readContract({
       address: CONTRACT_ADDRESS,
       abi: EIP712VerifierABI,
-      functionName: 'SEND_TYPE_HASH',
+      functionName: "SEND_TYPE_HASH",
     });
-    console.log('type hash:', hash);
+    console.log("type hash:", hash);
 
     const domain = {
-      name: 'EIP712Verifier',
-      version: '1.0.0',
+      name: "EIP712Verifier",
+      version: "1.0.0",
       chainId: 31337,
-      verifyingContract: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9'
+      verifyingContract: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
     };
-    
+
     const domainSeparator = hashTypedData({
       domain,
       types: {
         EIP712Domain: [
-          { name: 'name', type: 'string' },
-          { name: 'version', type: 'string' },
-          { name: 'chainId', type: 'uint256' },
-          { name: 'verifyingContract', type: 'address' },
+          { name: "name", type: "string" },
+          { name: "version", type: "string" },
+          { name: "chainId", type: "uint256" },
+          { name: "verifyingContract", type: "address" },
         ],
       },
-      primaryType: 'EIP712Domain',
+      primaryType: "EIP712Domain",
       message: domain,
     });
-    
-    console.log('硬编码 domainSeparator:', domainSeparator);
-  }
 
-
-
-
+    console.log("硬编码 domainSeparator:", domainSeparator);
+  };
 
   const handleVerify = async () => {
     if (!account || !signature) {
-      setError('请先完成签名');
+      setError("请先完成签名");
       return;
     }
 
     try {
-      setError('');
+      setError("");
       const result = await publicClient.readContract({
         address: CONTRACT_ADDRESS,
         abi: EIP712VerifierABI,
-        functionName: 'verify',
+        functionName: "verify",
         args: [
           account,
           {
@@ -178,8 +176,8 @@ export default function EIP712Demo() {
 
       setVerificationResult(result);
     } catch (error) {
-      console.error('验证错误:', error);
-      setError(error instanceof Error ? error.message : '验证失败');
+      console.error("验证错误:", error);
+      setError(error instanceof Error ? error.message : "验证失败");
     }
   };
 
@@ -242,11 +240,7 @@ export default function EIP712Demo() {
             </button>
           </div>
 
-          {error && (
-            <div className="mt-4 text-red-500">
-              {error}
-            </div>
-          )}
+          {error && <div className="mt-4 text-red-500">{error}</div>}
 
           {signature && (
             <div className="mt-4">
@@ -258,8 +252,12 @@ export default function EIP712Demo() {
           {verificationResult !== null && (
             <div className="mt-4">
               <h2 className="font-bold">验证结果:</h2>
-              <p className={verificationResult ? 'text-green-500' : 'text-red-500'}>
-                {verificationResult ? '验证成功' : '验证失败'}
+              <p
+                className={
+                  verificationResult ? "text-green-500" : "text-red-500"
+                }
+              >
+                {verificationResult ? "验证成功" : "验证失败"}
               </p>
             </div>
           )}
@@ -267,4 +265,4 @@ export default function EIP712Demo() {
       )}
     </div>
   );
-} 
+}

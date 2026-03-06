@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "keystore_demo": "node src/account/keystore_demo.js"
+    "keystore_demo": "node src/wallet/account/keystore_demo.js",
+    "build_raw_tx": "tsc && node src/wallet/transaction/build_raw_tx.js"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

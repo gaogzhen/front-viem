@@ -1,7 +1,14 @@
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
-import { createPublicClient, createWalletClient, http, formatEther, getContract, custom } from "viem";
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  formatEther,
+  getContract,
+  custom,
+} from "viem";
 import { foundry } from "viem/chains";
 
 import Counter_ABI from "../contracts/Counter.json";
@@ -10,8 +17,8 @@ import Counter_ABI from "../contracts/Counter.json";
 const COUNTER_ADDRESS = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
 export default function Home() {
-  const [balance, setBalance] = useState<string>('0');
-  const [counterNumber, setCounterNumber] = useState<string>('0');
+  const [balance, setBalance] = useState<string>("0");
+  const [counterNumber, setCounterNumber] = useState<string>("0");
   const [address, setAddress] = useState<`0x${string}` | undefined>();
   const [isConnected, setIsConnected] = useState(false);
   const [chainId, setChainId] = useState<number | undefined>();
@@ -19,26 +26,28 @@ export default function Home() {
   // 公共客户端
   const publicClient = createPublicClient({
     chain: foundry,
-    transport: http()
+    transport: http(),
   });
 
   // 连接钱包
   const connectWallet = async () => {
-    if (typeof window.ethereum === 'undefined') {
-      alert('请按照Metamask');
+    if (typeof window.ethereum === "undefined") {
+      alert("请按照Metamask");
       return;
     }
 
     try {
-      const [address] = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const [address] = await window.ethereum.request({
+        method: "eth_requestAccounts",
+      });
+      const chainId = await window.ethereum.request({ method: "eth_chainId" });
 
       setAddress(address);
       setChainId(chainId);
       setIsConnected(true);
 
       // 监听账户变化
-      window.ethereum.on('accountsChanged', (accounts: string[]) => {
+      window.ethereum.on("accountsChanged", (accounts: string[]) => {
         if (accounts.length === 0) {
           setIsConnected(false);
           setAddress(undefined);
@@ -48,14 +57,13 @@ export default function Home() {
       });
 
       // 监听网络变化
-      window.ethereum.on('chainChanged', (chainId: string) => {
+      window.ethereum.on("chainChanged", (chainId: string) => {
         setChainId(Number(chainId));
       });
-
     } catch (error) {
-      console.error('连接钱包失败: ', error);
+      console.error("连接钱包失败: ", error);
     }
-  }
+  };
 
   // 断开链接
   const disconnectWallet = () => {
@@ -71,7 +79,7 @@ export default function Home() {
     const counterContract = getContract({
       address: COUNTER_ADDRESS,
       abi: Counter_ABI,
-      client: publicClient
+      client: publicClient,
     });
 
     const number: any = await counterContract.read.number();
@@ -81,24 +89,27 @@ export default function Home() {
   // 调用increment 函数
   const handleIncrement = async () => {
     if (!address) return;
-
+    if (typeof window === "undefined" || !window.ethereum) {
+      console.error("MetaMask not installed");
+      return;
+    }
     const walletClient = createWalletClient({
       chain: foundry,
-      transport: custom(window.ethereum)
+      transport: custom(window.ethereum),
     });
 
     try {
       const hash = await walletClient.writeContract({
         address: COUNTER_ADDRESS,
         abi: Counter_ABI,
-        functionName: 'increment',
-        account: address
+        functionName: "increment",
+        account: address,
       });
-      console.log('Transaction hash: ', hash);
+      console.log("Transaction hash: ", hash);
       // 更新数值显示
       fetchCounterNumber();
     } catch (error) {
-      console.error('调用 increment 失败:', error);
+      console.error("调用 increment 失败:", error);
     }
   };
 
@@ -177,5 +188,4 @@ export default function Home() {
       </div>
     </div>
   );
-
 }

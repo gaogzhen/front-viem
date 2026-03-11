@@ -9,6 +9,7 @@ import {
   type WalletClient,
   type Hash,
   type TransactionReceipt,
+  type Address,
 } from "viem";
 import { prepareTransactionRequest } from "viem/actions";
 import { privateKeyToAccount, type PrivateKeyAccount } from "viem/accounts";

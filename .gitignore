@@ -43,5 +43,6 @@ next-env.d.ts
 
 # pnpm
 pnpm*.yaml
+.dist
 
 

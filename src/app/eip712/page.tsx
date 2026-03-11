@@ -6,11 +6,10 @@ import {
   createPublicClient,
   http,
   parseEther,
+  custom,
   type Hash,
   type Address,
-  custom,
   type WalletClient,
-  hashTypedData,
 } from "viem";
 import { foundry } from "viem/chains";
 import { EIP712VerifierABI } from "@/types/EIP712Verifier";
@@ -120,38 +119,6 @@ export default function EIP712Demo() {
     }
   };
 
-  const handleTest = async () => {
-    const hash = await publicClient.readContract({
-      address: CONTRACT_ADDRESS,
-      abi: EIP712VerifierABI,
-      functionName: "SEND_TYPE_HASH",
-    });
-    console.log("type hash:", hash);
-
-    const domain = {
-      name: "EIP712Verifier",
-      version: "1.0.0",
-      chainId: 31337,
-      verifyingContract: "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
-    };
-
-    const domainSeparator = hashTypedData({
-      domain,
-      types: {
-        EIP712Domain: [
-          { name: "name", type: "string" },
-          { name: "version", type: "string" },
-          { name: "chainId", type: "uint256" },
-          { name: "verifyingContract", type: "address" },
-        ],
-      },
-      primaryType: "EIP712Domain",
-      message: domain,
-    });
-
-    console.log("硬编码 domainSeparator:", domainSeparator);
-  };
-
   const handleVerify = async () => {
     if (!account || !signature) {
       setError("请先完成签名");
@@ -230,13 +197,6 @@ export default function EIP712Demo() {
               disabled={!signature}
             >
               验证
-            </button>
-            <button
-              onClick={handleTest}
-              className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              disabled={!signature}
-            >
-              测试
             </button>
           </div>
 

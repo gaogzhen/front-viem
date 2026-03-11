@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "keystore_demo": "node src/wallet/account/keystore_demo.js",
-    "build_raw_tx": "tsc && node src/wallet/transaction/build_raw_tx.js"
+    "build_raw_tx": "tsc && node src/wallet/transaction/build_raw_tx.js",
+    "sign_verify": "tsc && node src/wallet/sign/sign_verify.ts",
+    "test_ABI_encode": "tsc && node src/event/abi/test_ABI_encode.ts"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
